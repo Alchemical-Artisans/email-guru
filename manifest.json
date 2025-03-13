@@ -1,0 +1,9 @@
+{
+  "author": "lackita",
+  "authorUrl": "https://github.com/lackita/",
+  "description": "Manage Email through obsidian.",
+  "id": "email-guru",
+  "isDesktopOnly": false,
+  "name": "Email Guru",
+  "version": "0.0.0"
+}

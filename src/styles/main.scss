@@ -1,0 +1,18 @@
+/** You can remove this file if you don't need any styles */
+
+$plugin-id: 'email-guru';
+$lib-name: 'obsidian-dev-utils';
+
+.#{$plugin-id}.#{$lib-name} {
+  &.alert-modal {}
+
+  &.confirm-modal {}
+
+  &.plugin-settings-tab {
+    .value-component-invalid {}
+  }
+
+  &.prompt-modal {}
+
+  &.select-item-modal {}
+}
