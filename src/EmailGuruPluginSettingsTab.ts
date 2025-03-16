@@ -8,15 +8,48 @@ export class EmailGuruPluginSettingsTab extends PluginSettingsTabBase<EmailGuruP
     this.containerEl.empty();
 
     new Setting(this.containerEl)
-      .setName('Test Setting')
-      .setDesc('This is a test setting.')
+      .setName('Host')
+      .setDesc('IMAP host to connect to.')
       .addText((text) =>
-        this.bind(text, 'testSetting', {
-          componentToPluginSettingsValueConverter: (uiValue: string) => uiValue.replace(' (converted)', ''),
-          onChanged: () => {
-            this.display();
-          },
-          pluginSettingsToComponentValueConverter: (pluginSettingsValue: string) => `${pluginSettingsValue} (converted)`,
+        this.bind(text, 'host', {
+          componentToPluginSettingsValueConverter: (uiValue: string) => uiValue,
+          pluginSettingsToComponentValueConverter: (pluginSettingsValue: string) => pluginSettingsValue,
+          valueValidator: (uiValue) => uiValue.length > 0 ? undefined : 'Value must be non-empty'
+        })
+          .setPlaceholder('Enter a value')
+      );
+
+    new Setting(this.containerEl)
+      .setName('Port')
+      .setDesc('IMAP port to communicate over.')
+      .addText((text) =>
+        this.bind(text, 'port', {
+          componentToPluginSettingsValueConverter: (uiValue: string) => Number.parseInt(uiValue),
+          pluginSettingsToComponentValueConverter: (pluginSettingsValue: number) => `${pluginSettingsValue}`,
+          valueValidator: (uiValue) => uiValue.length > 0 ? undefined : 'Value must be non-empty'
+        })
+          .setPlaceholder('Enter a value')
+      );
+
+    new Setting(this.containerEl)
+      .setName('User')
+      .setDesc('Username used for authentication (usually your email address).')
+      .addText((text) =>
+        this.bind(text, 'user', {
+          componentToPluginSettingsValueConverter: (uiValue: string) => uiValue,
+          pluginSettingsToComponentValueConverter: (pluginSettingsValue: string) => pluginSettingsValue,
+          valueValidator: (uiValue) => uiValue.length > 0 ? undefined : 'Value must be non-empty'
+        })
+          .setPlaceholder('Enter a value')
+      );
+
+    new Setting(this.containerEl)
+      .setName('Password')
+      .setDesc('Password used to log in (sometimes a separate passkey from your webmail login).')
+      .addText((text) =>
+        this.bind(text, 'password', {
+          componentToPluginSettingsValueConverter: (uiValue: string) => uiValue,
+          pluginSettingsToComponentValueConverter: (pluginSettingsValue: string) => pluginSettingsValue,
           valueValidator: (uiValue) => uiValue.length > 0 ? undefined : 'Value must be non-empty'
         })
           .setPlaceholder('Enter a value')
