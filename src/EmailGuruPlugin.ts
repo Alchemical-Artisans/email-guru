@@ -1,6 +1,5 @@
 import {
   PluginSettingTab,
-  TFile
 } from 'obsidian';
 import { PluginBase } from 'obsidian-dev-utils/obsidian/Plugin/PluginBase';
 
@@ -8,6 +7,7 @@ import { EmailGuruPluginSettings } from './EmailGuruPluginSettings.ts';
 import { EmailGuruPluginSettingsTab } from './EmailGuruPluginSettingsTab.ts';
 import { EmailServer, ImapConnection } from './email_server.ts';
 import { ImapFlow } from 'imapflow';
+import { Folder, VaultAdapter } from './folder.ts';
 
 export class EmailGuruPlugin extends PluginBase<EmailGuruPluginSettings> {
   protected override createPluginSettings(data: unknown): EmailGuruPluginSettings {
@@ -30,9 +30,24 @@ export class EmailGuruPlugin extends PluginBase<EmailGuruPluginSettings> {
   }
 
   private async updateMessageCounts() {
-    const file = this.app.vault.getFileByPath("Organization/Email.md") as TFile
+    const count = await this.server.inbox_count()
 
-    const server = new EmailServer(new ImapConnection(new ImapFlow({
+    const folder = new Folder(
+      new VaultAdapter(this.app.vault)
+    )
+    const path = this.settings.folder
+      .join("Daily Stats")
+      .join(`${new Date().toISOString().split(/T/)[0]}.md`)
+    if (!folder.contains(path))
+      await folder.create_file(
+        path,
+        `---\ncount: ${count}\n---\n`
+      )
+  }
+
+  _server: EmailServer | undefined
+  private get server() {
+    return this._server ||= new EmailServer(new ImapConnection(new ImapFlow({
       host: this.settings.host,
       port: this.settings.port,
       secure: true,
@@ -40,10 +55,6 @@ export class EmailGuruPlugin extends PluginBase<EmailGuruPluginSettings> {
         user: this.settings.user,
         pass: this.settings.password,
       },
-    })))
-
-    const count = await server.inbox_count()
-
-    this.app.vault.process(file, (data) => data.replace("^counts", `| ${new Date().toISOString().split(/T/)[0]} | ${count} |\n^counts`))
+    })));
   }
 }

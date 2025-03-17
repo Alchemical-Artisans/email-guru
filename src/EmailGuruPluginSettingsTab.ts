@@ -8,6 +8,16 @@ export class EmailGuruPluginSettingsTab extends PluginSettingsTabBase<EmailGuruP
     this.containerEl.empty();
 
     new Setting(this.containerEl)
+      .setName("Folder")
+      .setDesc("Folder where retrieved email information is stored")
+      .addText((text) =>
+        this.bind(text, 'folder_path', {
+          componentToPluginSettingsValueConverter: (uiValue: string) => uiValue,
+          pluginSettingsToComponentValueConverter: (pluginSettingsValue: string) => pluginSettingsValue,
+        }).setPlaceholder("Enter a value")
+      )
+
+    new Setting(this.containerEl)
       .setName('Host')
       .setDesc('IMAP host to connect to.')
       .addText((text) =>

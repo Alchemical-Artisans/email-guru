@@ -18,7 +18,8 @@
     "lint": "obsidian-dev-utils lint",
     "lint:fix": "obsidian-dev-utils lint:fix",
     "spellcheck": "obsidian-dev-utils spellcheck",
-    "version": "obsidian-dev-utils version"
+    "version": "obsidian-dev-utils version",
+    "test": "vitest"
   },
   "devDependencies": {
     "@codemirror/language": "^6.10.8",
