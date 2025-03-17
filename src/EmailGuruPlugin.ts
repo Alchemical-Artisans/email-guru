@@ -38,16 +38,18 @@ export class EmailGuruPlugin extends PluginBase<EmailGuruPluginSettings> {
     const path = this.settings.folder
       .join("Daily Stats")
       .join(`${new Date().toISOString().split(/T/)[0]}.md`)
-    if (!folder.contains(path))
+    if (!await folder.contains(path)) {
       await folder.create_file(
         path,
         `---\ncount: ${count}\n---\n`
       )
+    } else {
+      console.info("File already exists", path.path)
+    }
   }
 
-  _server: EmailServer | undefined
   private get server() {
-    return this._server ||= new EmailServer(new ImapConnection(new ImapFlow({
+    return new EmailServer(new ImapConnection(new ImapFlow({
       host: this.settings.host,
       port: this.settings.port,
       secure: true,
