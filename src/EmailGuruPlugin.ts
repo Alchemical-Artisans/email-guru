@@ -25,6 +25,8 @@ export class EmailGuruPlugin extends PluginBase<EmailGuruPluginSettings> {
       name: 'Update Message Counts'
     });
 
+    this.addRibbonIcon("mail", "Fetch Email", this.updateMessageCounts.bind(this))
+
     // const INTERVAL_IN_MILLISECONDS = 24 * 60 * 60 * 1000;
     // this.registerInterval(window.setInterval(this.handleSampleIntervalTick.bind(this), INTERVAL_IN_MILLISECONDS));
   }
