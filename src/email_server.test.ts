@@ -1,10 +1,11 @@
 import { test, expect, describe } from "vitest"
-import { type Email, EmailServer, type EmailConnection } from "./email_server.ts"
+import { EmailServer, type EmailConnection } from "./email_server.ts"
+import { Email } from "./email.ts"
 
 class TestConnection implements EmailConnection {
   messages: Email[]
   constructor(messages: Partial<Email>[]) {
-    this.messages = messages.map((message) => ({
+    this.messages = messages.map((message) => new Email({
       id: 0,
       subject: "",
       from: [],

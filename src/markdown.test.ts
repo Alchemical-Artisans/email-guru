@@ -29,10 +29,22 @@ test("simple string frontmatter", () => {
   expect(new Markdown("", { foo: "bar" }).toString()).toEqual('---\nfoo: bar\n---\n')
 })
 
+test("quoted string", () => {
+  expect(new Markdown("", { foo: "a: b" }).toString()).toEqual('---\nfoo: "a: b"\n---\n')
+})
+
+test("quoted string with quotes", () => {
+  expect(new Markdown("", { foo: 'a: b"' }).toString()).toEqual('---\nfoo: \'a: b"\'\n---\n')
+})
+
+test("quoted string with both quotes", () => {
+  expect(new Markdown("", { foo: 'a: b"\'' }).toString()).toEqual('---\nfoo: "a: b\\"\'"\n---\n')
+})
+
 test("multiline string frontmatter", () => {
-  expect(new Markdown("", { foo: "bar\nbaz" }).toString()).toEqual(`---
+  expect(new Markdown("", { foo: "bar: boo\nbaz" }).toString()).toEqual(`---
 foo: |-
-  bar
+  bar: boo
   baz
 ---
 `)

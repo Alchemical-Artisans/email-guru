@@ -1,11 +1,12 @@
 import {
   PluginSettingTab,
+  TFile,
 } from 'obsidian';
 import { PluginBase } from 'obsidian-dev-utils/obsidian/Plugin/PluginBase';
 
 import { EmailGuruPluginSettings } from './EmailGuruPluginSettings.ts';
 import { EmailGuruPluginSettingsTab } from './EmailGuruPluginSettingsTab.ts';
-import { EmailServer, ImapConnection, type Address } from './email_server.ts';
+import { EmailServer, ImapConnection } from './email_server.ts';
 import { ImapFlow } from 'imapflow';
 import { Folder, VaultAdapter } from './folder.ts';
 import { toISODate } from './utils.ts';
@@ -33,7 +34,10 @@ export class EmailGuruPlugin extends PluginBase<EmailGuruPluginSettings> {
       name: "Create Email Files",
     })
 
-    this.addRibbonIcon("mail", "Fetch Email", this.updateMessageCounts.bind(this))
+    this.addRibbonIcon("mail", "Fetch Email", async () => {
+      await this.updateMessageCounts()
+      await this.createEmailFiles()
+    })
 
     // const INTERVAL_IN_MILLISECONDS = 24 * 60 * 60 * 1000;
     // this.registerInterval(window.setInterval(this.handleSampleIntervalTick.bind(this), INTERVAL_IN_MILLISECONDS));
@@ -43,21 +47,21 @@ export class EmailGuruPlugin extends PluginBase<EmailGuruPluginSettings> {
     const folder = new Folder(new VaultAdapter(this.app.vault))
     const messages = this.settings.folder.join("Messages")
 
+    const filesById = this.app.vault.getMarkdownFiles().reduce((lookup, file) => {
+      const frontmatter = this.app.metadataCache.getFileCache(file)?.frontmatter
+      if (frontmatter && frontmatter["id"])
+        lookup[frontmatter["id"]] = file
+      return lookup
+    }, {} as { [id: number]: TFile });
+
     for (let email of await this.server.emails()) {
-      const path = messages.join(`${email.id}.md`)
-      if (!await folder.contains(path)) {
-        const stringify_address = (addrs: Address[]) => addrs.map(
-          (addr) => addr.name
-            ? `${addr.name} <${addr.address}>`
-            : addr.address
-        )
-        await folder.create_file(path, new Markdown(email.body, {
-          id: email.id,
-          subject: email.subject,
-          from: stringify_address(email.from || []),
-          to: stringify_address(email.to || []),
-          cc: stringify_address(email.cc || []),
-        }).toString())
+      if (!filesById[email.id]) {
+        const path = messages.join(`${email.subject.replace(new RegExp("[:?\\\\/]", "g"), "")}.md`)
+        console.warn(path)
+
+        if (!await folder.contains(path)) {
+          await folder.create_file(path, (await email.markdown()).toString())
+        }
       }
     }
   }

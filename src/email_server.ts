@@ -1,4 +1,5 @@
 import type { ImapFlow } from "imapflow"
+import { Email, type Address } from "./email.ts"
 
 export interface EmailConnection {
   inbox: () => Inbox
@@ -21,20 +22,6 @@ export class EmailServer {
   }
 }
 
-export interface Address {
-  name?: string,
-  address: string,
-}
-
-export interface Email {
-  id: number,
-  subject: string,
-  from: Address[],
-  to: Address[],
-  cc: Address[],
-  body: string,
-}
-
 export class ImapConnection implements EmailConnection {
   imap: ImapFlow
   constructor(imap: ImapFlow) {
@@ -50,14 +37,14 @@ export class ImapConnection implements EmailConnection {
       emails: async () => await this.within_inbox(async () => {
         const messages = []
         for await (let message of this.imap.fetch("1:*", { uid: true, envelope: true, source: true })) {
-          messages.push({
+          messages.push(new Email({
             id: message.uid,
             subject: message.envelope.subject,
             from: message.envelope.from as Address[],
             to: message.envelope.to as Address[],
             cc: message.envelope.cc as Address[],
             body: message.source.toString(),
-          })
+          }))
         }
         return messages
       }),
@@ -69,6 +56,7 @@ export class ImapConnection implements EmailConnection {
     const mailbox = await this.imap.getMailboxLock("INBOX")
     const result = await callback()
     mailbox.release()
+    this.imap.close()
     return result
   }
 }

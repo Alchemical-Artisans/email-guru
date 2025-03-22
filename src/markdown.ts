@@ -54,7 +54,11 @@ export class Markdown {
   private frontmatter_string(value: string) {
     if (value.includes("\n"))
       return ` |-\n${this.indent_lines(value)}`
-    else if (value)
+    else if (value.includes(":")) {
+      const quote = value.includes('"') && !value.includes("'") ? "'" : '"'
+      if (value.includes(quote)) value = value.replace(quote, `\\${quote}`)
+      return ` ${quote}${value}${quote}`
+    } else if (value)
       return ` ${value}`
     return ""
   }
