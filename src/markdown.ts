@@ -2,27 +2,40 @@ import { toISODate } from "./utils.ts";
 
 export class OnlyDate extends Date {}
 
+type FrontmatterData = {
+  [key: string]: any;
+};
+
 export class Markdown {
   body: string;
-  frontmatter: { [key: string]: any } | undefined;
-  constructor(body: string, frontmatter: {} | undefined = undefined) {
+  frontmatter_data: FrontmatterData | undefined;
+  frontmatter: Frontmatter | undefined;
+  constructor(body: string, frontmatter: FrontmatterData | undefined = undefined) {
     this.body = body
-    this.frontmatter = frontmatter
+    this.frontmatter_data = frontmatter
+    this.frontmatter = frontmatter ? new Frontmatter(frontmatter) : undefined
   }
 
   toString() {
     return [
-      this.frontmatter_text(),
+      this.frontmatter?.toString(),
       this.body
     ].join("")
   }
+}
 
-  private frontmatter_text(): string {
+export class Frontmatter {
+  data: FrontmatterData;
+  constructor(data: FrontmatterData) {
+    this.data = data
+  }
+
+  toString(): string {
     const lines: string[] = []
-    if (this.frontmatter !== undefined) {
+    if (this.data !== undefined) {
       lines.push("---")
-      for (let [key, value] of Object.entries(this.frontmatter)) {
-        lines.push(this.frontmatter_entry(key, value))
+      for (let [key, value] of Object.entries(this.data)) {
+        lines.push(this.entry(key, value))
       }
       lines.push("---", "")
       return lines.join("\n")
@@ -30,46 +43,106 @@ export class Markdown {
     return lines.join("\n")
   }
 
-  private frontmatter_entry(key: string, value: any) {
-    let line = `${key}:`
-    if (typeof value === "object" && value instanceof Array)
-      line += this.frontmatter_object(value)
-    else if (typeof value === "object" && value instanceof OnlyDate)
-      line += ` ${toISODate(value)}`
-    else if (typeof value === "object" && value instanceof Date)
-      line += ` ${value.toISOString().replace(/[.].*/, "")}`
-    else if (typeof value === "string")
-      line += this.frontmatter_string(value)
-    else if (value !== undefined && value !== null)
-      line += ` ${value}`
-    return line;
+  private entry(key: string, value: any) {
+    return `${key}:${this.value_for(value)?.toString() || ""}`
   }
 
-  private frontmatter_object(value: Array<any>) {
-    if (value.length > 0)
-      return "\n" + this.prefix_entries("  - ", value).join("\n")
-    return ""
+  private value_for(value: any) {
+    if (FrontmatterArray.represented_by(value))
+      return new FrontmatterArray(value)
+
+    if (FrontmatterDate.represented_by(value))
+      return new FrontmatterDate(value)
+
+    if (FrontmatterDateTime.represented_by(value))
+      return new FrontmatterDateTime(value)
+
+    if (FrontmatterString.represented_by(value))
+      return new FrontmatterString(value)
+
+    if (FrontmatterValue.represented_by(value))
+      return new FrontmatterValue(value)
+
+    return undefined
+  }
+}
+
+export class FrontmatterValue {
+  static represented_by(value: any) {
+    return value !== undefined && value !== null
   }
 
-  private frontmatter_string(value: string) {
-    if (value.includes("\n"))
-      return ` |-\n${this.indent_lines(value)}`
-    else if (value.includes(":")) {
-      const quote = value.includes('"') && !value.includes("'") ? "'" : '"'
-      if (value.includes(quote)) value = value.replace(quote, `\\${quote}`)
-      return ` ${quote}${value}${quote}`
-    } else if (value)
-      return ` ${value}`
-    return ""
+  value: any;
+  constructor(value: any) {
+    this.value = value
   }
 
-  private indent_lines(value: string) {
+  toString() {
+    return ` ${this.value}`
+  }
+
+  protected indent_lines(value: string) {
     return this.prefix_entries("  ", value.split("\n")).join("\n")
   }
 
-  private prefix_entries(prefix: string, value: Array<string>) {
+  protected prefix_entries(prefix: string, value: Array<string>) {
     return value.map(
       (line) => prefix + line
     )
+  }
+}
+
+export class FrontmatterArray extends FrontmatterValue {
+  static override represented_by(value: any) {
+    return typeof value === "object" && value instanceof Array
+  }
+
+  override toString() {
+    if (this.value.length > 0)
+      return "\n" + this.prefix_entries("  - ", this.value).join("\n")
+    return ""
+  }
+}
+
+export class FrontmatterDate extends FrontmatterValue {
+  static override represented_by(value: any) {
+    return typeof value === "object" && value instanceof OnlyDate
+  }
+
+  override toString() {
+    return ` ${toISODate(this.value)}`
+  }
+}
+
+export class FrontmatterDateTime extends FrontmatterValue {
+  static override represented_by(value: any) {
+    return typeof value === "object" && value instanceof Date
+  }
+
+  override toString() {
+    return ` ${this.value.toISOString().replace(/[.].*/, "")}`
+  }
+}
+
+export class FrontmatterString extends FrontmatterValue {
+  static override represented_by(value: any) {
+    return typeof value === "string"
+  }
+
+  override toString() {
+    if (this.value.includes("\n"))
+      return ` |-\n${this.indent_lines(this.value)}`
+    else if (this.needs_quotes()) {
+      const quote = this.value.includes('"') && !this.value.includes("'") ? "'" : '"'
+      let value = this.value;
+      if (value.includes(quote)) value = value.replace(quote, `\\${quote}`)
+      return ` ${quote}${value}${quote}`
+    } else if (this.value)
+      return ` ${this.value}`
+    return ""
+  }
+
+  needs_quotes() {
+    return this.value.includes(":") || this.value.includes("[") || this.value.includes("]")
   }
 }

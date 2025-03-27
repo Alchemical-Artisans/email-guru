@@ -3,6 +3,8 @@ import { Email, type Address } from "./email.ts"
 
 export interface EmailConnection {
   inbox: () => Inbox
+  archive(email: Email): Promise<boolean>
+  unarchive(email: Email): Promise<boolean>
 }
 
 export class EmailServer {
@@ -19,6 +21,14 @@ export class EmailServer {
   async emails(): Promise<Email[]> {
     const inbox = this.connection.inbox()
     return await inbox.emails()
+  }
+
+  async archive(email: Email) {
+    email.archived = await this.connection.archive(email)
+  }
+
+  async unarchive(email: Email) {
+    email.archived = await this.connection.unarchive(email)
   }
 }
 
@@ -44,11 +54,26 @@ export class ImapConnection implements EmailConnection {
             to: message.envelope.to as Address[],
             cc: message.envelope.cc as Address[],
             body: message.source.toString(),
+            archived: false,
           }))
         }
         return messages
       }),
     }
+  }
+
+  async archive(email: Email): Promise<boolean> {
+    await this.within_inbox(async () => {
+      await this.imap.messageFlagsAdd({ uid: email.id.toString() }, ["\\Deleted"])
+    })
+    return true
+  }
+
+  async unarchive(email: Email): Promise<boolean> {
+    await this.within_inbox(async () => {
+      await this.imap.messageFlagsRemove({ uid: email.id.toString() }, ["\\Deleted"])
+    })
+    return false
   }
 
   private async within_inbox<T>(callback: () => Promise<T>): Promise<T> {

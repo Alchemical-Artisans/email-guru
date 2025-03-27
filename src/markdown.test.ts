@@ -1,5 +1,5 @@
 import { expect, test } from "vitest"
-import { Markdown, OnlyDate } from "./markdown.ts"
+import { Frontmatter, FrontmatterString, Markdown, OnlyDate } from "./markdown.ts"
 
 test("empty file", () => {
   expect(new Markdown("").toString()).toEqual("")
@@ -29,7 +29,11 @@ test("simple string frontmatter", () => {
   expect(new Markdown("", { foo: "bar" }).toString()).toEqual('---\nfoo: bar\n---\n')
 })
 
-test("quoted string", () => {
+test("string with squre brackets", () => {
+  expect(new FrontmatterString("[a]").needs_quotes()).toBeTruthy()
+})
+
+test("string with colon", () => {
   expect(new Markdown("", { foo: "a: b" }).toString()).toEqual('---\nfoo: "a: b"\n---\n')
 })
 
