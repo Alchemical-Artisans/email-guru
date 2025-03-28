@@ -1,6 +1,6 @@
 import { simpleParser } from "mailparser"
 import TurndownService from "turndown"
-import { Markdown } from "./markdown.ts"
+import { Markdown, type FrontmatterData } from "./markdown.ts"
 import type { FrontMatterCache } from "obsidian"
 
 export interface Address {
@@ -66,7 +66,7 @@ export class Email {
   }
 
   async html() {
-    return (await this.parsed_body()).html as string
+    return new HTML((await this.parsed_body()).html as string)
   }
 
   async text() {
@@ -74,26 +74,44 @@ export class Email {
   }
 
   async markdown() {
-    const document = new DOMParser().parseFromString(await this.html(), "text/html")
-
     const stringify_address = (addrs: Address[]) => addrs.map(
       (addr) => addr.name
         ? `${addr.name} <${addr.address}>`
         : addr.address
     )
 
+    const frontmatter = {
+      id: this.id,
+      subject: this.subject,
+      from: stringify_address(this.from || []),
+      to: stringify_address(this.to || []),
+      cc: stringify_address(this.cc || []),
+      archived: this.archived,
+    }
+
+    return (await this.html()).markdown(frontmatter);
+  }
+}
+
+export class HTML {
+  html: string
+  constructor(html: string) {
+    this.html = html
+  }
+
+  markdown(frontmatter?: FrontmatterData) {
+    const document = new DOMParser().parseFromString(this.html, "text/html")
+
+    const body = document.getElementsByTagName("body").item(0) as HTMLBodyElement
+    const script_tags = body.getElementsByTagName("script")
+    for (let i = 0; i < script_tags.length; ++i) {
+      const tag = script_tags[i]
+      tag!.remove()
+    }
+
     return new Markdown(
-      new TurndownService().turndown(
-        document.getElementsByTagName("body").item(0) as HTMLBodyElement
-      ),
-      {
-        id: this.id,
-        subject: this.subject,
-        from: stringify_address(this.from || []),
-        to: stringify_address(this.to || []),
-        cc: stringify_address(this.cc || []),
-        archived: this.archived,
-      },
+      new TurndownService().turndown(body),
+      frontmatter,
     );
   }
 }

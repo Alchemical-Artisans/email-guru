@@ -65,11 +65,16 @@ export class EmailGuruPlugin extends PluginBase<EmailGuruPluginSettings> {
 
     for (let email of await this.server.emails()) {
       if (!this.repo.find_file(email.id)) {
-        const path = messages.join(`${email.subject.replace(new RegExp("[:?\\\\/]", "g"), "")}.md`)
 
-        if (!await folder.contains(path)) {
-          await folder.create_file(path, (await email.markdown()).toString())
-        }
+        const filename_appropriate_subject = email.subject.replace(
+          new RegExp("[:?\\\\/]", "g"),
+          ""
+        );
+
+        await folder.create_file_if_missing(
+          messages.join(`${filename_appropriate_subject}.md`),
+          (await email.markdown()).toString(),
+        )
       }
     }
   }

@@ -2,7 +2,7 @@ import { toISODate } from "./utils.ts";
 
 export class OnlyDate extends Date {}
 
-type FrontmatterData = {
+export type FrontmatterData = {
   [key: string]: any;
 };
 

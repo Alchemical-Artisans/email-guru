@@ -1,5 +1,5 @@
 import { expect, test } from "vitest";
-import { Folder, type FolderAdapter } from "./folder.ts";
+import { FileExistsError, Folder, type FolderAdapter } from "./folder.ts";
 import { Path } from "./path.ts";
 
 class MemoryFolderAdapter implements FolderAdapter {
@@ -33,9 +33,24 @@ test("file doesn't exist", async () => {
 
 test("creates a file", async () => {
   const folder = new Folder(new MemoryFolderAdapter())
-  folder.create_file(new Path("foo.md"), "bar")
+  await folder.create_file(new Path("foo.md"), "bar")
   expect(await folder.contains(new Path("foo.md"))).toBeTruthy()
   expect(await folder.contains(new Path("bar.md"))).toBeFalsy()
+})
+
+test("throws an error when the file exists", async () => {
+  const folder = new Folder(new MemoryFolderAdapter())
+  await folder.create_file(new Path("foo.md"), "bar")
+  await expect(async () => await folder.create_file(new Path("foo.md"), "bar"))
+    .rejects.toThrowError(FileExistsError)
+})
+
+test("create file conditionally when missing", async () => {
+  const folder = new Folder(new MemoryFolderAdapter())
+
+  await folder.create_file_if_missing(new Path("foo.md"), "bar")
+  expect(await folder.contains(new Path("foo.md"))).toBeTruthy()
+  await folder.create_file_if_missing(new Path("foo.md"), "bang")
 })
 
 test("creates a folder, if necessary", async () => {

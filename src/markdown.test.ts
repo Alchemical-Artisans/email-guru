@@ -1,5 +1,5 @@
 import { expect, test } from "vitest"
-import { Frontmatter, FrontmatterString, Markdown, OnlyDate } from "./markdown.ts"
+import { FrontmatterString, Markdown, OnlyDate } from "./markdown.ts"
 
 test("empty file", () => {
   expect(new Markdown("").toString()).toEqual("")

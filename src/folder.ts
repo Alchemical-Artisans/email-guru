@@ -1,6 +1,8 @@
 import type { Vault } from "obsidian"
 import { Path } from "./path.ts";
 
+export class FileExistsError extends Error {}
+
 export interface FolderAdapter {
   contains(path: Path): boolean;
   create_file(path: Path, contents: string): Promise<void>;
@@ -14,9 +16,16 @@ export class Folder {
     this.adapter = adapter
   }
 
+  async create_file_if_missing(path: Path, contents: string) {
+    if (!await this.contains(path))
+      await this.create_file(path, contents)
+  }
+
   async create_file(path: Path, contents: string) {
     if (path.has_folder())
       await this.create_file_in_subfolder(path, contents);
+    else if (await this.contains(path))
+      throw new FileExistsError(path.path.toString())
     else
       await this.adapter.create_file(path, contents)
   }
